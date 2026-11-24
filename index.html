@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chấm Nhanh Trắc Nghiệm 50 Câu</title>
+  <!-- SheetJS dùng để xuất file .xlsx (nếu offline sẽ tự động chuyển sang xuất CSV chuẩn UTF-8) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #003153;
+      --primary-hover: #004473;
+      --primary-light: #e7f0f6;
+      --secondary: #8a2c00;
+      --secondary-light: #f9ebe6;
+      --blank-bg: #eceff2;
+      --blank-text: #555555;
+      --bg: #f1f4f8;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #556070;
+      --border: #cbd5e1;
+      --border-strong: #003153;
+      --surface: #f8fafc;
+      --radius: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background-color: var(--bg);
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* ======================== THANH CÔNG CỤ TRÊN CÙNG ======================== */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 44px;
+      padding: 6px 12px;
+      background-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ======================== NÚT BẤM ======================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 11px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      color: var(--text);
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background-color: var(--surface);
+      border-color: var(--primary);
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background-color: #ffffff;
+      border-color: var(--secondary);
+      color: var(--secondary);
+    }
+
+    .btn-danger:hover {
+      background-color: var(--secondary-light);
+    }
+
+    .btn-toolbar {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.35);
+      color: #ffffff;
+    }
+
+    .btn-toolbar:hover {
+      background-color: rgba(255, 255, 255, 0.24);
+      border-color: #ffffff;
+    }
+
+    .btn-toolbar.active {
+      background-color: #ffffff;
+      color: var(--primary);
+      border-color: #ffffff;
+    }
+
+    .btn-toolbar-danger {
+      background-color: rgba(180, 50, 20, 0.85);
+      border-color: rgba(255, 255, 255, 0.45);
+      color: #ffffff;
+    }
+
+    .btn-toolbar-danger:hover {
+      background-color: #a32a0c;
+      border-color: #ffffff;
+    }
+
+    .badge-count {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background-color: #16a34a;
+      color: #ffffff;
+    }
+
+    .badge-count.incomplete {
+      background-color: #d97706;
+      color: #ffffff;
+    }
+
+    .autosave-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #ffffff;
+      white-space: nowrap;
+    }
+
+    .autosave-pill.error {
+      background-color: var(--secondary);
+      border-color: #ffffff;
+    }
+
+    .autosave-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: #4ade80;
+      display: inline-block;
+    }
+
+    .autosave-pill.error .autosave-dot {
+      background-color: #fca5a5;
+    }
+
+    /* ======================== KHU VỰC ĐÁP ÁN CHUẨN ======================== */
+    .key-drawer {
+      display: none;
+      padding: 12px 14px;
+      background-color: var(--surface);
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .key-drawer.open {
+      display: block;
+    }
+
+    .key-drawer-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .key-config-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      background-color: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .key-config-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .key-config-input {
+      width: 64px;
+      padding: 4px 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      background-color: #ffffff;
+      color: var(--text);
+    }
+
+    .key-textarea {
+      width: 100%;
+      min-height: 68px;
+      padding: 8px 10px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      resize: vertical;
+      background-color: #ffffff;
+      color: var(--text);
+    }
+
+    .key-textarea:focus {
+      outline: 2px solid var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .key-preview {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background-color: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .key-chunk {
+      display: inline-block;
+      padding: 2px 6px;
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border-radius: 4px;
+      font-family: "Consolas", monospace;
+    }
+
+    /* ======================== BỐ CỤC CHIA ĐÔI ======================== */
+    .workspace {
+      display: flex;
+      width: 100%;
+      min-height: calc(100vh - 44px);
+    }
+
+    .pdf-pane {
+      display: none;
+      width: 48%;
+      min-width: 240px;
+      max-width: 75%;
+      height: calc(100vh - 44px);
+      position: sticky;
+      top: 44px;
+      background-color: #2b2b2b;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .pdf-pane.visible {
+      display: flex;
+    }
+
+    .resizer {
+      display: none;
+      width: 6px;
+      cursor: col-resize;
+      background-color: var(--primary);
+      flex-shrink: 0;
+      position: relative;
+      transition: background-color 0.15s;
+    }
+
+    .resizer:hover,
+    .resizer.dragging {
+      background-color: var(--secondary);
+    }
+
+    .resizer.visible {
+      display: block;
+    }
+
+    .pdf-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 6px 8px;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .pdf-filename {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 700;
+      color: var(--primary);
+      max-width: 210px;
+    }
+
+    .pdf-page-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .pdf-page-input {
+      width: 50px;
+      padding: 3px 5px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      background-color: #ffffff;
+      color: var(--text);
+    }
+
+    .pdf-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      text-align: center;
+      background-color: #f0f2f5;
+      color: var(--text);
+    }
+
+    .pdf-frame {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background-color: #525659;
+    }
+
+    .pdf-reminder {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      background-color: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--primary);
+    }
+
+    .pdf-reminder.visible {
+      display: flex;
+    }
+
+    /* ======================== KHUNG CHẤM BÀI BÊN PHẢI ======================== */
+    .grader-pane {
+      flex: 1;
+      min-width: 0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    .editing-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px;
+      margin-bottom: 10px;
+      background-color: var(--secondary-light);
+      border: 1px solid var(--secondary);
+      border-radius: var(--radius);
+      color: var(--secondary);
+      font-weight: 700;
+    }
+
+    .editing-banner.active {
+      display: flex;
+    }
+
+    /* Hàng thông tin thí sinh */
+    .student-row {
+      display: grid;
+      grid-template-columns: 95px 150px 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input {
+      width: 100%;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background-color: #ffffff;
+      color: var(--text);
+    }
+
+    .input:focus {
+      outline: 2px solid var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    /* Ô nhập nhanh liên tục */
+    .fast-input-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .fast-input {
+      flex: 1;
+      min-width: 220px;
+      padding: 9px 12px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      border: 2px solid var(--primary);
+      border-radius: var(--radius);
+      background-color: #ffffff;
+      color: var(--primary);
+    }
+
+    .fast-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .shortcut-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .shortcut-hint code {
+      padding: 1px 4px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-family: "Consolas", monospace;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Thanh thống kê trực tiếp */
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .stats-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .stat-item {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat-item strong {
+      font-size: 14px;
+      color: var(--primary);
+      margin-left: 3px;
+    }
+
+    .stat-score strong {
+      font-size: 16px;
+      color: var(--secondary);
+    }
+
+    .stat-remaining {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Lưới 50 câu (xếp theo cột 1-10, 11-20, ..., 41-50) */
+    .grid-50 {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-rows: repeat(10, auto);
+      grid-auto-flow: column;
+      gap: 4px;
+    }
+
+    .q-cell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background-color: #ffffff;
+      cursor: pointer;
+      user-select: none;
+      min-height: 28px;
+      font-size: 12px;
+      transition: transform 0.08s, border-color 0.1s;
+    }
+
+    .q-cell:hover {
+      border-color: var(--primary);
+    }
+
+    .q-cell.cursor {
+      border: 2px solid var(--primary);
+      background-color: #fffbeb;
+    }
+
+    .q-cell.correct {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .q-cell.wrong {
+      background-color: var(--secondary-light);
+      color: var(--secondary);
+      border-color: #e0a899;
+    }
+
+    .q-cell.blank {
+      background-color: var(--blank-bg);
+      color: var(--blank-text);
+    }
+
+    .q-num {
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 22px;
+    }
+
+    .q-ans {
+      font-weight: 700;
+      font-size: 13px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .q-key {
+      font-size: 10px;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+
+    /* Thanh sửa nhanh 1 câu */
+    .quick-edit-bar {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 8px 10px;
+      background-color: #fffbeb;
+      border: 1px solid #f59e0b;
+      border-radius: var(--radius);
+    }
+
+    .quick-edit-bar.open {
+      display: flex;
+    }
+
+    .qe-btn {
+      min-width: 36px;
+      font-weight: 700;
+    }
+
+    .qe-btn.selected {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    /* ======================== BẢNG DANH SÁCH ĐÃ CHẤM ======================== */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: var(--surface);
+      color: var(--primary);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    td.num {
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    td.score-cell {
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    td.wrong-list {
+      color: var(--secondary);
+      font-family: "Consolas", monospace;
+      font-size: 11px;
+      word-break: break-word;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .empty-row {
+      text-align: center;
+      padding: 20px !important;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ======================== TOAST & MODAL XÁC NHẬN ======================== */
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 100;
+      max-width: 360px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      background-color: var(--primary);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.error {
+      background-color: var(--secondary);
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background-color: rgba(15, 23, 42, 0.55);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 400px;
+      background-color: #ffffff;
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 10px 14px;
+      background-color: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .modal-body {
+      padding: 14px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 14px;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ======================== RESPONSIVE ======================== */
+    @media (max-width: 860px) {
+      .workspace {
+        flex-direction: column;
+      }
+      .pdf-pane.visible {
+        width: 100% !important;
+        max-width: 100%;
+        height: 45vh;
+        position: static;
+        border-bottom: 2px solid var(--primary);
+      }
+      .resizer.visible {
+        display: none;
+      }
+      .student-row {
+        grid-template-columns: 80px 1fr;
+      }
+      .field-name {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .grid-50 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-rows: none !important;
+        grid-auto-flow: row !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Thanh công cụ trên cùng -->
+  <div class="toolbar">
+    <div class="toolbar-group">
+      <button type="button" id="btnOpenPdf" class="btn btn-toolbar">Mở PDF</button>
+      <button type="button" id="btnTogglePdf" class="btn btn-toolbar" style="display:none;">Ẩn PDF</button>
+      <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none;" />
+      <button type="button" id="btnToggleKey" class="btn btn-toolbar">
+        Đáp án chuẩn <span id="keyCountBadge" class="badge-count incomplete">0/50</span>
+      </button>
+      <button type="button" id="btnExportExcel" class="btn btn-toolbar active">Xuất Excel (.xlsx)</button>
+      <button type="button" id="btnBackupJson" class="btn btn-toolbar">Sao lưu JSON</button>
+      <button type="button" id="btnRestoreJson" class="btn btn-toolbar">Khôi phục JSON</button>
+      <input type="file" id="jsonFileInput" accept="application/json,.json" style="display:none;" />
+    </div>
+    <div class="toolbar-group">
+      <span id="autosaveStatus" class="autosave-pill" title="Toàn bộ bài đã chấm, đáp án chuẩn và bài đang gõ dở được tự động lưu trên trình duyệt">
+        <span class="autosave-dot"></span>
+        <span id="autosaveText">Sẵn sàng tự động lưu</span>
+      </span>
+      <button type="button" id="btnClearAll" class="btn btn-toolbar-danger">Xóa phiên mới</button>
+    </div>
+  </div>
+
+  <!-- Khu vực thiết lập Đáp án chuẩn -->
+  <div id="keyDrawer" class="key-drawer">
+    <div class="key-drawer-header">
+      <div>
+        <strong>ĐÁP ÁN CHUẨN</strong>
+        <span style="color:var(--muted); margin-left:6px;">(Dán chuỗi liên tục ABCD..., có dấu cách, xuống dòng, hoặc có đánh số như 1.A 2.B... — tự động lọc ký tự A/B/C/D)</span>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span id="keyDrawerCount" style="font-weight:700; color:var(--primary);">0/50 câu</span>
+        <button type="button" id="btnClearKey" class="btn btn-danger btn-sm">Xóa đáp án</button>
+        <button type="button" id="btnCloseKey" class="btn btn-primary btn-sm">Xong</button>
+      </div>
+    </div>
+    <div class="key-config-row">
+      <label class="key-config-item" for="totalQuestionsInput">
+        Số câu:
+        <input type="number" id="totalQuestionsInput" class="key-config-input" value="50" min="5" max="120" step="1" />
+      </label>
+      <label class="key-config-item" for="scaleInput">
+        Thang điểm:
+        <input type="number" id="scaleInput" class="key-config-input" value="10" min="1" max="100" step="0.5" />
+      </label>
+      <span style="font-size:11px; color:var(--muted);">Thay đổi số câu hoặc thang điểm sẽ tự động tính lại điểm toàn bộ danh sách.</span>
+    </div>
+    <textarea id="keyTextarea" class="key-textarea" placeholder="Ví dụ: 1.B 2.C 3.C 4.C 5.A ... hoặc BCCCA..."></textarea>
+    <div id="keyPreview" class="key-preview">Chưa có đáp án chuẩn.</div>
+  </div>
+
+  <!-- Không gian làm việc chính -->
+  <div class="workspace" id="workspace">
+    <!-- Khung hiển thị PDF đối chiếu bên trái -->
+    <div id="pdfPane" class="pdf-pane">
+      <div class="pdf-bar">
+        <span id="pdfFilename" class="pdf-filename">Chưa chọn file PDF</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label class="pdf-page-note" for="pdfPageInput" title="Ghi chú số trang PDF đang xem (tự động lưu)">
+            Trang PDF:
+            <input type="text" id="pdfPageInput" class="pdf-page-input" value="1" autocomplete="off" />
+          </label>
+          <button type="button" id="btnChangePdf" class="btn btn-sm">Đổi PDF</button>
+          <button type="button" id="btnHidePdfBar" class="btn btn-danger btn-sm">Ẩn</button>
+        </div>
+      </div>
+      <div id="pdfPlaceholder" class="pdf-placeholder" style="display:none;">
+        <div id="pdfPlaceholderText" style="font-weight:700; color:var(--primary);"></div>
+        <button type="button" id="btnReopenPdf" class="btn btn-primary">Chọn lại file PDF</button>
+      </div>
+      <iframe id="pdfFrame" class="pdf-frame" title="PDF bài thi đối chiếu"></iframe>
+    </div>
+
+    <!-- Thanh kéo thay đổi độ rộng khung PDF -->
+    <div id="resizer" class="resizer" title="Kéo để thay đổi độ rộng khung PDF"></div>
+
+    <!-- Khung chấm nhanh & danh sách bài bên phải -->
+    <div class="grader-pane">
+      <!-- Nhắc nhẹ file PDF lần trước khi tải lại trang -->
+      <div id="pdfReminder" class="pdf-reminder">
+        <span id="pdfReminderText"></span>
+        <div style="display:flex; gap:6px;">
+          <button type="button" id="btnReminderOpenPdf" class="btn btn-primary btn-sm">Mở lại PDF</button>
+          <button type="button" id="btnDismissReminder" class="btn btn-sm">Đóng</button>
+        </div>
+      </div>
+
+      <!-- Khu vực Chấm nhanh -->
+      <div class="panel">
+        <div class="panel-header">
+          <span id="graderPanelTitle">CHẤM NHANH 50 CÂU</span>
+          <span id="keyStatusText" style="font-size:11px; color:var(--secondary);">Chưa đủ 50 đáp án chuẩn</span>
+        </div>
+        <div class="panel-body">
+          <!-- Thông báo khi đang sửa 1 bài cũ -->
+          <div id="editingBanner" class="editing-banner">
+            <span id="editingText">Đang sửa bài #1</span>
+            <button type="button" id="btnCancelEdit" class="btn btn-danger btn-sm">Hủy sửa</button>
+          </div>
+
+          <!-- Hàng thông tin thí sinh -->
+          <div class="student-row">
+            <div class="field">
+              <label for="inputPage">STT / Trang</label>
+              <input type="text" id="inputPage" class="input" value="1" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="inputMssv">MSSV (tùy chọn)</label>
+              <input type="text" id="inputMssv" class="input" placeholder="VD: 611258819" autocomplete="off" />
+            </div>
+            <div class="field field-name">
+              <label for="inputName">Họ và tên (tùy chọn)</label>
+              <input type="text" id="inputName" class="input" placeholder="Nhập họ tên thí sinh" autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Ô nhập nhanh liên tục -->
+          <div class="fast-input-wrap">
+            <input
+              type="text"
+              id="fastInput"
+              class="fast-input"
+              placeholder="Đặt trỏ chuột vào đây và gõ liên tục đáp án (A/B/C/D hoặc 1/2/3/4)..."
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="characters"
+              spellcheck="false"
+            />
+            <button type="button" id="btnSaveExam" class="btn btn-primary">Lưu bài (Enter)</button>
+            <button type="button" id="btnClearDraft" class="btn btn-danger">Hủy nháp (Esc)</button>
+          </div>
+
+          <div class="shortcut-hint">
+            Phím nhanh: <code>A B C D</code> hoặc <code>1 2 3 4</code> (A-D) | Bỏ trống: <code>0</code> <code>-</code> <code>Space</code> | Xóa lùi: <code>Backspace</code> | Lưu nhanh: <code>Enter</code> hoặc <code>Ctrl+Enter</code> | Click ô trên lưới để sửa riêng 1 câu.
+          </div>
+
+          <!-- Thanh thống kê trực tiếp -->
+          <div class="stats-bar">
+            <div class="stats-metrics">
+              <span class="stat-item">Đã nhập:<strong id="statEntered">0/50</strong></span>
+              <span class="stat-item">Đúng:<strong id="statCorrect">0/50</strong></span>
+              <span class="stat-item stat-score">Điểm:<strong id="statScore">0.00</strong></span>
+            </div>
+            <span id="statRemaining" class="stat-remaining">Đang ở câu 1 (còn 50 câu)</span>
+          </div>
+
+          <!-- Lưới 50 câu -->
+          <div id="grid50" class="grid-50"></div>
+
+          <!-- Thanh sửa nhanh 1 câu khi click trên lưới -->
+          <div id="quickEditBar" class="quick-edit-bar">
+            <strong id="quickEditLabel" style="color:var(--primary);">Sửa câu 1:</strong>
+            <button type="button" class="btn btn-sm qe-btn" data-val="A">A</button>
+            <button type="button" class="btn btn-sm qe-btn" data-val="B">B</button>
+            <button type="button" class="btn btn-sm qe-btn" data-val="C">C</button>
+            <button type="button" class="btn btn-sm qe-btn" data-val="D">D</button>
+            <button type="button" class="btn btn-sm qe-btn" data-val="-">Trống (-)</button>
+            <button type="button" id="btnCloseQuickEdit" class="btn btn-danger btn-sm" style="margin-left:auto;">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bảng danh sách bài đã chấm -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>DANH SÁCH ĐÃ CHẤM (<span id="totalGraded">0</span> bài)</span>
+          <span id="avgScoreText" style="font-size:12px; color:var(--text);">Điểm TB: 0.00</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:65px; text-align:center;">STT/Trang</th>
+                <th style="width:105px;">MSSV</th>
+                <th style="width:155px;">Họ tên</th>
+                <th id="thCorrectCol" style="width:70px; text-align:center;">Đúng/50</th>
+                <th style="width:65px; text-align:center;">Điểm</th>
+                <th>Chi tiết câu sai</th>
+                <th style="width:96px; text-align:center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody">
+              <tr><td colspan="7" class="empty-row">Chưa có bài thi nào được lưu.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thông báo Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Hộp thoại xác nhận tùy chỉnh (thay thế confirm) -->
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div id="modalTitle" class="modal-header">Xác nhận</div>
+      <div id="modalMessage" class="modal-body">Bạn có chắc chắn muốn thực hiện thao tác này?</div>
+      <div class="modal-footer">
+        <button type="button" id="btnModalCancel" class="btn">Hủy</button>
+        <button type="button" id="btnModalConfirm" class="btn btn-danger">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ======================== HẰNG SỐ & TRẠNG THÁI ======================== */
+      const STORAGE_KEY_V2 = 'chamNhanh_autosave_v2';
+      const LEGACY_KEYS = {
+        ANSWER_KEY: 'chamNhanh50_answerKey_v1',
+        RAW_KEY: 'chamNhanh50_rawKey_v1',
+        SCALE: 'chamNhanh50_scale_v1',
+        RECORDS: 'chamNhanh50_records_v1'
+      };
+
+      const state = {
+        totalQuestions: 50,   // Số câu mặc định 50 (tùy chỉnh được)
+        answerKey: [],        // Mảng đáp án chuẩn 'A'|'B'|'C'|'D'
+        rawKeyText: '',       // Chuỗi thô người dùng dán vào ô đáp án chuẩn
+        scale: 10,            // Thang điểm mặc định 10
+        currentAnswers: [],   // Chuỗi đáp án của bài đang chấm dở
+        draftPage: '1',       // STT/Trang bài đang chấm dở
+        draftMssv: '',        // MSSV bài đang chấm dở
+        draftName: '',        // Họ tên bài đang chấm dở
+        records: [],          // Danh sách bài đã chấm
+        editingId: null,      // ID bài đang sửa (null nếu đang chấm bài mới)
+        quickEditIndex: null, // Vị trí câu đang mở sửa nhanh trên lưới
+        pdfUrl: null,         // ObjectURL của file PDF hiện tại (không lưu vào localStorage)
+        lastPdfName: '',      // Tên file PDF mở gần nhất (lưu để nhắc mở lại)
+        pdfPageNote: '1',     // Ghi chú trang PDF đang xem
+        pdfWidthPct: 48,      // Độ rộng khung PDF (%)
+        savedAt: null         // Mốc thời gian tự động lưu gần nhất
+      };
+
+      /* ======================== PHẦN TỬ DOM ======================== */
+      const el = {
+        btnToggleKey: document.getElementById('btnToggleKey'),
+        keyCountBadge: document.getElementById('keyCountBadge'),
+        totalQuestionsInput: document.getElementById('totalQuestionsInput'),
+        scaleInput: document.getElementById('scaleInput'),
+        btnOpenPdf: document.getElementById('btnOpenPdf'),
+        btnTogglePdf: document.getElementById('btnTogglePdf'),
+        pdfFileInput: document.getElementById('pdfFileInput'),
+        btnExportExcel: document.getElementById('btnExportExcel'),
+        btnBackupJson: document.getElementById('btnBackupJson'),
+        btnRestoreJson: document.getElementById('btnRestoreJson'),
+        jsonFileInput: document.getElementById('jsonFileInput'),
+        btnClearAll: document.getElementById('btnClearAll'),
+
+        autosaveStatus: document.getElementById('autosaveStatus'),
+        autosaveText: document.getElementById('autosaveText'),
+
+        keyDrawer: document.getElementById('keyDrawer'),
+        keyTextarea: document.getElementById('keyTextarea'),
+        keyDrawerCount: document.getElementById('keyDrawerCount'),
+        keyPreview: document.getElementById('keyPreview'),
+        btnClearKey: document.getElementById('btnClearKey'),
+        btnCloseKey: document.getElementById('btnCloseKey'),
+
+        workspace: document.getElementById('workspace'),
+        pdfPane: document.getElementById('pdfPane'),
+        resizer: document.getElementById('resizer'),
+        pdfFilename: document.getElementById('pdfFilename'),
+        pdfPageInput: document.getElementById('pdfPageInput'),
+        pdfPlaceholder: document.getElementById('pdfPlaceholder'),
+        pdfPlaceholderText: document.getElementById('pdfPlaceholderText'),
+        btnReopenPdf: document.getElementById('btnReopenPdf'),
+        pdfFrame: document.getElementById('pdfFrame'),
+        btnChangePdf: document.getElementById('btnChangePdf'),
+        btnHidePdfBar: document.getElementById('btnHidePdfBar'),
+
+        pdfReminder: document.getElementById('pdfReminder'),
+        pdfReminderText: document.getElementById('pdfReminderText'),
+        btnReminderOpenPdf: document.getElementById('btnReminderOpenPdf'),
+        btnDismissReminder: document.getElementById('btnDismissReminder'),
+
+        graderPanelTitle: document.getElementById('graderPanelTitle'),
+        keyStatusText: document.getElementById('keyStatusText'),
+        editingBanner: document.getElementById('editingBanner'),
+        editingText: document.getElementById('editingText'),
+        btnCancelEdit: document.getElementById('btnCancelEdit'),
+
+        inputPage: document.getElementById('inputPage'),
+        inputMssv: document.getElementById('inputMssv'),
+        inputName: document.getElementById('inputName'),
+        fastInput: document.getElementById('fastInput'),
+        btnSaveExam: document.getElementById('btnSaveExam'),
+        btnClearDraft: document.getElementById('btnClearDraft'),
+
+        statEntered: document.getElementById('statEntered'),
+        statCorrect: document.getElementById('statCorrect'),
+        statScore: document.getElementById('statScore'),
+        statRemaining: document.getElementById('statRemaining'),
+
+        grid50: document.getElementById('grid50'),
+        quickEditBar: document.getElementById('quickEditBar'),
+        quickEditLabel: document.getElementById('quickEditLabel'),
+        btnCloseQuickEdit: document.getElementById('btnCloseQuickEdit'),
+
+        totalGraded: document.getElementById('totalGraded'),
+        avgScoreText: document.getElementById('avgScoreText'),
+        thCorrectCol: document.getElementById('thCorrectCol'),
+        resultsBody: document.getElementById('resultsBody'),
+
+        toast: document.getElementById('toast'),
+        confirmModal: document.getElementById('confirmModal'),
+        modalTitle: document.getElementById('modalTitle'),
+        modalMessage: document.getElementById('modalMessage'),
+        btnModalCancel: document.getElementById('btnModalCancel'),
+        btnModalConfirm: document.getElementById('btnModalConfirm')
+      };
+
+      let toastTimer = null;
+      let pendingConfirmAction = null;
+
+      /* ======================== TIỆN ÍCH CHUNG ======================== */
+
+      function escapeHtml(str) {
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatTimeHHMMSS(dateObj) {
+        const d = dateObj instanceof Date ? dateObj : new Date(dateObj);
+        if (Number.isNaN(d.getTime())) return '';
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        return `${hh}:${mm}:${ss}`;
+      }
+
+      function updateAutosaveIndicator(ok, customMessage) {
+        if (!ok) {
+          el.autosaveStatus.classList.add('error');
+          el.autosaveText.textContent = customMessage || 'Lỗi bộ nhớ trình duyệt';
+          return;
+        }
+        el.autosaveStatus.classList.remove('error');
+        const timeStr = state.savedAt ? formatTimeHHMMSS(state.savedAt) : formatTimeHHMMSS(new Date());
+        el.autosaveText.textContent = customMessage || `Đã tự động lưu • ${timeStr}`;
+      }
+
+      function showToast(message, isError = false) {
+        el.toast.textContent = message;
+        el.toast.classList.toggle('error', Boolean(isError));
+        el.toast.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          el.toast.classList.remove('show');
+        }, 2800);
+      }
+
+      function openConfirm(title, message, onConfirm) {
+        el.modalTitle.textContent = title;
+        el.modalMessage.textContent = message;
+        pendingConfirmAction = onConfirm;
+        el.confirmModal.classList.add('open');
+      }
+
+      function closeConfirm() {
+        el.confirmModal.classList.remove('open');
+        pendingConfirmAction = null;
+      }
+
+      function getNextPageNumber() {
+        if (state.records.length === 0) return '1';
+        let maxNum = state.records.length;
+        for (const rec of state.records) {
+          const n = parseInt(rec.page, 10);
+          if (!Number.isNaN(n) && n > maxNum) {
+            maxNum = n;
+          }
+        }
+        return String(maxNum + 1);
+      }
+
+      function toggleKeyDrawer(forceState) {
+        const isOpen = typeof forceState === 'boolean'
+          ? forceState
+          : !el.keyDrawer.classList.contains('open');
+        el.keyDrawer.classList.toggle('open', isOpen);
+        el.btnToggleKey.classList.toggle('active', isOpen);
+        if (isOpen) {
+          el.keyTextarea.focus();
+        } else {
+          el.fastInput.focus();
+        }
+      }
+
+      /**
+       * Ánh xạ ký tự phím bấm sang A, B, C, D hoặc '-'
+       */
+      function mapCharToAnswer(ch) {
+        const upper = String(ch || '').toUpperCase();
+        if (upper === 'A' || upper === '1') return 'A';
+        if (upper === 'B' || upper === '2') return 'B';
+        if (upper === 'C' || upper === '3') return 'C';
+        if (upper === 'D' || upper === '4') return 'D';
+        if (upper === '0' || upper === '-' || upper === ' ') return '-';
+        return null;
+      }
+
+      /**
+       * Lọc đáp án chuẩn từ chuỗi người dùng dán vào (hỗ trợ nhiều định dạng)
+       */
+      function parseAnswerKey(rawText) {
+        if (!rawText) return [];
+        const cleaned = rawText
+          .replace(/[A-Za-zÀ-ỹ]+/g, (word) => {
+            return /^[A-Da-d]+$/.test(word) ? word : ' ';
+          })
+          .toUpperCase();
+
+        const matches = cleaned.match(/[A-D]/g);
+        if (!matches) return [];
+        return matches.slice(0, state.totalQuestions);
+      }
+
+      /**
+       * Chấm điểm một mảng đáp án thí sinh so với đáp án chuẩn hiện tại
+       */
+      function evaluateAnswers(studentAnswers) {
+        let correctCount = 0;
+        const wrongDetails = [];
+        const total = state.totalQuestions;
+        const keyLen = state.answerKey.length;
+
+        for (let i = 0; i < total; i++) {
+          const studentAns = studentAnswers[i] || '-';
+          const correctAns = state.answerKey[i] || '';
+          if (correctAns && studentAns === correctAns) {
+            correctCount++;
+          } else if (correctAns) {
+            wrongDetails.push(`${i + 1}(${studentAns}→${correctAns})`);
+          }
+        }
+
+        const score = keyLen > 0 ? (correctCount / total) * state.scale : 0;
+        const roundedScore = Math.round(score * 100) / 100;
+
+        return {
+          correctCount,
+          score: roundedScore,
+          wrongDetailsText: wrongDetails.join(', '),
+          answerString: Array.from({ length: total }, (_, i) => studentAnswers[i] || '-').join('')
+        };
+      }
+
+      /* ======================== LƯU TRỮ LOCALSTORAGE (REAL-TIME) ======================== */
+
+      function buildPersistPayload() {
+        return {
+          version: 2,
+          totalQuestions: state.totalQuestions,
+          answerKey: state.answerKey,
+          rawKeyText: state.rawKeyText,
+          scale: state.scale,
+          records: state.records,
+          draft: {
+            page: state.draftPage,
+            mssv: state.draftMssv,
+            name: state.draftName,
+            answers: state.currentAnswers,
+            editingId: state.editingId,
+            pdfPageNote: state.pdfPageNote
+          },
+          lastPdfName: state.lastPdfName,
+          pdfWidthPct: state.pdfWidthPct,
+          savedAt: new Date().toISOString()
+        };
+      }
+
+      function saveToStorage() {
+        try {
+          const payload = buildPersistPayload();
+          localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(payload));
+          state.savedAt = payload.savedAt;
+          updateAutosaveIndicator(true);
+        } catch (err) {
+          updateAutosaveIndicator(false, 'Không thể tự động lưu (bộ nhớ đầy/chặn)');
+          showToast('Lỗi localStorage: hãy dùng "Sao lưu JSON" để tránh mất dữ liệu.', true);
+        }
+      }
+
+      function applyPersistedData(data) {
+        if (!data || typeof data !== 'object') return;
+
+        const qNum = parseInt(data.totalQuestions, 10);
+        if (!Number.isNaN(qNum) && qNum >= 5 && qNum <= 120) {
+          state.totalQuestions = qNum;
+        } else {
+          state.totalQuestions = 50;
+        }
+
+        const sc = parseFloat(data.scale);
+        if (!Number.isNaN(sc) && sc > 0) {
+          state.scale = sc;
+        } else {
+          state.scale = 10;
+        }
+
+        state.rawKeyText = typeof data.rawKeyText === 'string' ? data.rawKeyText : '';
+        if (Array.isArray(data.answerKey)) {
+          state.answerKey = data.answerKey.slice(0, state.totalQuestions);
+        } else {
+          state.answerKey = parseAnswerKey(state.rawKeyText);
+        }
+
+        state.records = Array.isArray(data.records) ? data.records : [];
+
+        const draft = data.draft && typeof data.draft === 'object' ? data.draft : {};
+        state.draftPage = typeof draft.page === 'string' && draft.page.trim() !== ''
+          ? draft.page
+          : getNextPageNumber();
+        state.draftMssv = typeof draft.mssv === 'string' ? draft.mssv : '';
+        state.draftName = typeof draft.name === 'string' ? draft.name : '';
+        state.currentAnswers = Array.isArray(draft.answers)
+          ? draft.answers.slice(0, state.totalQuestions)
+          : [];
+        state.editingId = draft.editingId != null && state.records.some((r) => r.id === draft.editingId)
+          ? draft.editingId
+          : null;
+        state.pdfPageNote = typeof draft.pdfPageNote === 'string' && draft.pdfPageNote.trim() !== ''
+          ? draft.pdfPageNote
+          : '1';
+
+        state.lastPdfName = typeof data.lastPdfName === 'string' ? data.lastPdfName : '';
+        const w = parseFloat(data.pdfWidthPct);
+        state.pdfWidthPct = !Number.isNaN(w) && w >= 20 && w <= 75 ? w : 48;
+        state.savedAt = data.savedAt || null;
+      }
+
+      function syncInputsFromState() {
+        el.totalQuestionsInput.value = String(state.totalQuestions);
+        el.scaleInput.value = String(state.scale);
+        el.keyTextarea.value = state.rawKeyText;
+        el.inputPage.value = state.draftPage;
+        el.inputMssv.value = state.draftMssv;
+        el.inputName.value = state.draftName;
+        el.pdfPageInput.value = state.pdfPageNote;
+        el.pdfPane.style.width = `${state.pdfWidthPct}%`;
+
+        if (state.editingId !== null) {
+          const rec = state.records.find((r) => r.id === state.editingId);
+          el.editingText.textContent = rec
+            ? `Đang sửa bài Trang/STT: ${rec.page}${rec.name ? ' - ' + rec.name : ''}`
+            : 'Đang sửa bài đã lưu';
+          el.editingBanner.classList.add('active');
+          el.btnSaveExam.textContent = 'Cập nhật bài (Enter)';
+        } else {
+          el.editingBanner.classList.remove('active');
+          el.btnSaveExam.textContent = 'Lưu bài (Enter)';
+        }
+
+        if (state.lastPdfName && !state.pdfUrl) {
+          el.pdfReminderText.textContent = `File PDF lần trước: "${state.lastPdfName}" (Trang đang xem: ${state.pdfPageNote}). Chọn lại nếu cần đối chiếu.`;
+          el.pdfReminder.classList.add('visible');
+        } else {
+          el.pdfReminder.classList.remove('visible');
+        }
+      }
+
+      function loadFromStorage() {
+        try {
+          const rawV2 = localStorage.getItem(STORAGE_KEY_V2);
+          if (rawV2) {
+            const parsed = JSON.parse(rawV2);
+            applyPersistedData(parsed);
+            syncInputsFromState();
+            updateAutosaveIndicator(
+              true,
+              state.savedAt ? `Đã khôi phục • ${formatTimeHHMMSS(state.savedAt)}` : 'Đã khôi phục dữ liệu'
+            );
+            return;
+          }
+
+          // Tương thích ngược với phiên bản v1 nếu người dùng đã chấm dở trước đó
+          const savedRawKey = localStorage.getItem(LEGACY_KEYS.RAW_KEY);
+          const savedKey = localStorage.getItem(LEGACY_KEYS.ANSWER_KEY);
+          const savedScale = localStorage.getItem(LEGACY_KEYS.SCALE);
+          const savedRecords = localStorage.getItem(LEGACY_KEYS.RECORDS);
+
+          if (savedRawKey || savedKey || savedRecords) {
+            applyPersistedData({
+              totalQuestions: 50,
+              rawKeyText: savedRawKey || '',
+              answerKey: savedKey ? JSON.parse(savedKey) : [],
+              scale: savedScale ? parseFloat(savedScale) : 10,
+              records: savedRecords ? JSON.parse(savedRecords) : []
+            });
+            syncInputsFromState();
+            saveToStorage();
+            return;
+          }
+
+          state.draftPage = getNextPageNumber();
+          syncInputsFromState();
+        } catch (err) {
+          updateAutosaveIndicator(false, 'Lỗi đọc dữ liệu đã lưu');
+          showToast('Lỗi đọc dữ liệu cũ, đã khởi tạo trạng thái mới.', true);
+        }
+      }
+
+      /* ======================== RENDER GIAO DIỆN ======================== */
+
+      function renderKeyUI() {
+        const total = state.totalQuestions;
+        const len = state.answerKey.length;
+        el.graderPanelTitle.textContent = `CHẤM NHANH ${total} CÂU`;
+        el.thCorrectCol.textContent = `Đúng/${total}`;
+        el.keyCountBadge.textContent = `${len}/${total}`;
+        el.keyCountBadge.classList.toggle('incomplete', len < total);
+        el.keyDrawerCount.textContent = `${len}/${total} câu`;
+
+        if (len === total) {
+          el.keyStatusText.textContent = `Đáp án chuẩn: Đủ ${total}/${total} câu (Thang ${state.scale})`;
+          el.keyStatusText.style.color = 'var(--primary)';
+        } else {
+          el.keyStatusText.textContent = `Cảnh báo: Đáp án chuẩn mới có ${len}/${total} câu`;
+          el.keyStatusText.style.color = 'var(--secondary)';
+        }
+
+        if (len === 0) {
+          el.keyPreview.textContent = 'Chưa có đáp án chuẩn.';
+          return;
+        }
+
+        const chunks = [];
+        for (let i = 0; i < len; i += 5) {
+          const slice = state.answerKey.slice(i, i + 5).join('');
+          const end = Math.min(i + 5, len);
+          chunks.push(`<span class="key-chunk">${i + 1}-${end}: <strong>${slice}</strong></span>`);
+        }
+        el.keyPreview.innerHTML = chunks.join('');
+      }
+
+      function renderGridAndStats() {
+        const total = state.totalQuestions;
+        const entered = state.currentAnswers.length;
+        const result = evaluateAnswers(state.currentAnswers);
+
+        const cols = Math.max(1, Math.ceil(total / 10));
+        const rows = Math.min(10, total);
+        el.grid50.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+        el.grid50.style.gridTemplateRows = `repeat(${rows}, auto)`;
+
+        el.fastInput.value = state.currentAnswers.join('');
+        el.statEntered.textContent = `${entered}/${total}`;
+        el.statCorrect.textContent = `${result.correctCount}/${total}`;
+        el.statScore.textContent = result.score.toFixed(2);
+        el.statRemaining.textContent = entered >= total
+          ? `Đã đủ ${total} câu — nhấn Enter để lưu`
+          : `Đang ở câu ${entered + 1} (còn ${total - entered} câu)`;
+
+        const cellsHtml = [];
+        for (let i = 0; i < total; i++) {
+          const ans = state.currentAnswers[i] || '';
+          const key = state.answerKey[i] || '';
+          let cls = 'q-cell';
+          let keyHint = '';
+
+          if (ans === '-') {
+            cls += ' blank';
+            if (key) {
+              keyHint = `<span class="q-key">→${key}</span>`;
+            }
+          } else if (ans !== '') {
+            if (key) {
+              if (ans === key) {
+                cls += ' correct';
+              } else {
+                cls += ' wrong';
+                keyHint = `<span class="q-key">→${key}</span>`;
+              }
+            }
+          }
+
+          if (i === entered && entered < total) {
+            cls += ' cursor';
+          }
+          if (state.quickEditIndex === i) {
+            cls += ' cursor';
+          }
+
+          cellsHtml.push(
+            `<div class="${cls}" data-index="${i}" title="Click để sửa câu ${i + 1}">` +
+              `<span class="q-num">${i + 1}.</span>` +
+              `<span class="q-ans">${ans}</span>` +
+              keyHint +
+            `</div>`
+          );
+        }
+        el.grid50.innerHTML = cellsHtml.join('');
+
+        if (state.quickEditIndex !== null) {
+          const curVal = state.currentAnswers[state.quickEditIndex] || '';
+          el.quickEditBar.querySelectorAll('.qe-btn').forEach((btn) => {
+            btn.classList.toggle('selected', btn.dataset.val === curVal);
+          });
+        }
+      }
+
+      function renderTable() {
+        const total = state.totalQuestions;
+        const count = state.records.length;
+        el.totalGraded.textContent = String(count);
+
+        if (count === 0) {
+          el.avgScoreText.textContent = 'Điểm TB: 0.00';
+          el.resultsBody.innerHTML = '<tr><td colspan="7" class="empty-row">Chưa có bài thi nào được lưu.</td></tr>';
+          return;
+        }
+
+        let sumScore = 0;
+        const rowsHtml = state.records.map((rec) => {
+          const evalRes = evaluateAnswers(rec.answers);
+          sumScore += evalRes.score;
+          const isEditingThis = state.editingId === rec.id;
+
+          return (
+            `<tr${isEditingThis ? ' style="background-color:#f9ebe6;"' : ''}>` +
+              `<td class="num"><strong>${escapeHtml(rec.page)}</strong></td>` +
+              `<td>${escapeHtml(rec.mssv)}</td>` +
+              `<td>${escapeHtml(rec.name)}</td>` +
+              `<td class="num">${evalRes.correctCount}/${total}</td>` +
+              `<td class="score-cell">${evalRes.score.toFixed(2)}</td>` +
+              `<td class="wrong-list">${escapeHtml(evalRes.wrongDetailsText || 'Không sai câu nào')}</td>` +
+              `<td>` +
+                `<div class="row-actions">` +
+                  `<button type="button" class="btn btn-sm btn-edit-row" data-id="${rec.id}">Sửa</button>` +
+                  `<button type="button" class="btn btn-danger btn-sm btn-del-row" data-id="${rec.id}">Xóa</button>` +
+                `</div>` +
+              `</td>` +
+            `</tr>`
+          );
+        });
+
+        el.avgScoreText.textContent = `Điểm TB: ${(sumScore / count).toFixed(2)}`;
+        el.resultsBody.innerHTML = rowsHtml.join('');
+      }
+
+      /* ======================== XỬ LÝ CHẤM BÀI ======================== */
+
+      function pushAnswer(char) {
+        if (state.currentAnswers.length >= state.totalQuestions) {
+          showToast(`Đã đủ ${state.totalQuestions} câu. Nhấn Enter để lưu bài.`);
+          return;
+        }
+        state.currentAnswers.push(char);
+        closeQuickEdit();
+        saveToStorage();
+        renderGridAndStats();
+      }
+
+      function popAnswer() {
+        if (state.currentAnswers.length > 0) {
+          state.currentAnswers.pop();
+          closeQuickEdit();
+          saveToStorage();
+          renderGridAndStats();
+        }
+      }
+
+      function clearDraft(keepStudentInfo = false) {
+        state.currentAnswers = [];
+        closeQuickEdit();
+        if (!keepStudentInfo && state.editingId === null) {
+          state.draftMssv = '';
+          state.draftName = '';
+          el.inputMssv.value = '';
+          el.inputName.value = '';
+        }
+        saveToStorage();
+        renderGridAndStats();
+        el.fastInput.focus();
+      }
+
+      function cancelEditMode() {
+        state.editingId = null;
+        state.draftPage = getNextPageNumber();
+        state.draftMssv = '';
+        state.draftName = '';
+        state.currentAnswers = [];
+        closeQuickEdit();
+        syncInputsFromState();
+        saveToStorage();
+        renderGridAndStats();
+        renderTable();
+        el.fastInput.focus();
+      }
+
+      function saveCurrentExam() {
+        if (state.currentAnswers.length === 0) {
+          showToast('Chưa nhập đáp án nào cho bài thi này.', true);
+          el.fastInput.focus();
+          return;
+        }
+
+        const total = state.totalQuestions;
+        const normalizedAnswers = Array.from(
+          { length: total },
+          (_, i) => state.currentAnswers[i] || '-'
+        );
+
+        const pageVal = el.inputPage.value.trim() || getNextPageNumber();
+        const mssvVal = el.inputMssv.value.trim();
+        const nameVal = el.inputName.value.trim();
+        const evalRes = evaluateAnswers(normalizedAnswers);
+
+        if (state.editingId !== null) {
+          const idx = state.records.findIndex((r) => r.id === state.editingId);
+          if (idx !== -1) {
+            state.records[idx] = {
+              ...state.records[idx],
+              page: pageVal,
+              mssv: mssvVal,
+              name: nameVal,
+              answers: normalizedAnswers
+            };
+            showToast(`Đã cập nhật bài ${pageVal} — Điểm: ${evalRes.score.toFixed(2)}`);
+          }
+          state.editingId = null;
+        } else {
+          const newRec = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            page: pageVal,
+            mssv: mssvVal,
+            name: nameVal,
+            answers: normalizedAnswers
+          };
+          state.records.push(newRec);
+          showToast(`Đã lưu bài ${pageVal} — Đúng ${evalRes.correctCount}/${total} (${evalRes.score.toFixed(2)} đ)`);
+        }
+
+        state.draftPage = getNextPageNumber();
+        state.draftMssv = '';
+        state.draftName = '';
+        state.currentAnswers = [];
+        closeQuickEdit();
+
+        syncInputsFromState();
+        saveToStorage();
+        renderGridAndStats();
+        renderTable();
+        el.fastInput.focus();
+      }
+
+      function loadRecordForEdit(id) {
+        const rec = state.records.find((r) => r.id === id);
+        if (!rec) return;
+
+        state.editingId = rec.id;
+        state.draftPage = rec.page;
+        state.draftMssv = rec.mssv;
+        state.draftName = rec.name;
+        state.currentAnswers = rec.answers.slice(0, state.totalQuestions);
+
+        closeQuickEdit();
+        syncInputsFromState();
+        saveToStorage();
+        renderGridAndStats();
+        renderTable();
+        el.fastInput.focus();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function openQuickEdit(index) {
+        state.quickEditIndex = index;
+        el.quickEditLabel.textContent = `Sửa câu ${index + 1}:`;
+        el.quickEditBar.classList.add('open');
+        renderGridAndStats();
+      }
+
+      function closeQuickEdit() {
+        state.quickEditIndex = null;
+        el.quickEditBar.classList.remove('open');
+      }
+
+      function applyQuickEdit(val) {
+        if (state.quickEditIndex === null) return;
+        const idx = state.quickEditIndex;
+        while (state.currentAnswers.length <= idx) {
+          state.currentAnswers.push('-');
+        }
+        state.currentAnswers[idx] = val;
+        closeQuickEdit();
+        saveToStorage();
+        renderGridAndStats();
+        el.fastInput.focus();
+      }
+
+      /* ======================== XUẤT EXCEL / CSV & SAO LƯU JSON ======================== */
+
+      function exportResults() {
+        if (state.records.length === 0) {
+          showToast('Danh sách trống, chưa có dữ liệu để xuất.', true);
+          return;
+        }
+
+        const total = state.totalQuestions;
+        const headers = [
+          'STT/Trang',
+          'MSSV',
+          'Họ tên',
+          'Số câu đúng',
+          'Tổng câu',
+          'Điểm',
+          'Các câu sai',
+          `Chuỗi ${total} đáp án`
+        ];
+
+        const rows = state.records.map((rec) => {
+          const evalRes = evaluateAnswers(rec.answers);
+          return [
+            rec.page,
+            rec.mssv,
+            rec.name,
+            evalRes.correctCount,
+            total,
+            evalRes.score,
+            evalRes.wrongDetailsText,
+            evalRes.answerString
+          ];
+        });
+
+        const dateStamp = new Date().toISOString().slice(0, 10);
+
+        // Nếu có thư viện SheetJS (đang online) thì xuất file .xlsx chuẩn
+        if (typeof window.XLSX !== 'undefined') {
+          try {
+            const wsData = [headers, ...rows];
+            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [
+              { wch: 11 },
+              { wch: 14 },
+              { wch: 24 },
+              { wch: 12 },
+              { wch: 10 },
+              { wch: 9 },
+              { wch: 45 },
+              { wch: total + 4 }
+            ];
+            const wb = window.XLSX.utils.book_new();
+            window.XLSX.utils.book_append_sheet(wb, ws, 'BangDiem');
+            window.XLSX.writeFile(wb, `BangDiem_ChamNhanh_${dateStamp}.xlsx`);
+            showToast(`Đã xuất file Excel (${state.records.length} bài).`);
+            return;
+          } catch (err) {
+            // Rơi xuống dự phòng CSV bên dưới
+          }
+        }
+
+        // Dự phòng xuất CSV chuẩn UTF-8 (có BOM để Excel mở tiếng Việt không lỗi font)
+        const csvLines = [headers, ...rows].map((row) =>
+          row
+            .map((cell) => `"${String(cell == null ? '' : cell).replace(/"/g, '""')}"`)
+            .join(',')
+        );
+        const csvContent = '\uFEFF' + csvLines.join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `BangDiem_ChamNhanh_${dateStamp}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('Đang offline: đã xuất dự phòng file CSV chuẩn UTF-8.');
+      }
+
+      function backupJson() {
+        const payload = buildPersistPayload();
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const dateStamp = new Date().toISOString().slice(0, 10);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `SaoLuu_ChamThi_${dateStamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('Đã tải file sao lưu JSON.');
+      }
+
+      function restoreJsonFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result || ''));
+            if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.records)) {
+              showToast('File JSON không đúng định dạng sao lưu.', true);
+              return;
+            }
+            applyPersistedData(parsed);
+            syncInputsFromState();
+            saveToStorage();
+            renderKeyUI();
+            renderGridAndStats();
+            renderTable();
+            showToast(`Đã khôi phục ${state.records.length} bài thi từ file JSON.`);
+          } catch (err) {
+            showToast('Không thể đọc file JSON (file bị lỗi cú pháp).', true);
+          }
+        };
+        reader.onerror = () => showToast('Lỗi khi đọc file JSON.', true);
+        reader.readAsText(file, 'utf-8');
+      }
+
+      /* ======================== SỰ KIỆN BÀN PHÍM & CHUỘT ======================== */
+
+      // Phím tắt toàn cục Ctrl+Enter để lưu bài từ bất kỳ ô nào
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          saveCurrentExam();
+        }
+      });
+
+      // Lưu real-time khi sửa STT/Trang, MSSV, Họ tên, Ghi chú trang PDF
+      el.inputPage.addEventListener('input', () => {
+        state.draftPage = el.inputPage.value;
+        saveToStorage();
+      });
+      el.inputMssv.addEventListener('input', () => {
+        state.draftMssv = el.inputMssv.value;
+        saveToStorage();
+      });
+      el.inputName.addEventListener('input', () => {
+        state.draftName = el.inputName.value;
+        saveToStorage();
+      });
+      el.pdfPageInput.addEventListener('input', () => {
+        state.pdfPageNote = el.pdfPageInput.value;
+        saveToStorage();
+      });
+
+      // Bắt phím trực tiếp trên ô nhập nhanh (chống lỗi gõ tiếng Việt UniKey/EVKey)
+      el.fastInput.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveCurrentExam();
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          clearDraft(true);
+          return;
+        }
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          popAnswer();
+          return;
+        }
+
+        // Hỗ trợ cả bàn phím chính và Numpad
+        let mapped = mapCharToAnswer(e.key);
+        if (!mapped && e.code) {
+          if (e.code === 'KeyA' || e.code === 'Digit1' || e.code === 'Numpad1') mapped = 'A';
+          else if (e.code === 'KeyB' || e.code === 'Digit2' || e.code === 'Numpad2') mapped = 'B';
+          else if (e.code === 'KeyC' || e.code === 'Digit3' || e.code === 'Numpad3') mapped = 'C';
+          else if (e.code === 'KeyD' || e.code === 'Digit4' || e.code === 'Numpad4') mapped = 'D';
+          else if (e.code === 'Digit0' || e.code === 'Numpad0' || e.code === 'Minus' || e.code === 'NumpadSubtract' || e.code === 'Space') mapped = '-';
+        }
+
+        if (mapped) {
+          e.preventDefault();
+          pushAnswer(mapped);
+          return;
+        }
+
+        // Chặn các ký tự chữ/số khác không hợp lệ
+        if (e.key.length === 1) {
+          e.preventDefault();
+        }
+      });
+
+      // Hỗ trợ dán nguyên chuỗi đáp án vào ô nhập nhanh
+      el.fastInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+        const mapped = [];
+        for (const ch of text) {
+          const ans = mapCharToAnswer(ch);
+          if (ans) mapped.push(ans);
+        }
+        if (mapped.length > 0) {
+          for (const ch of mapped) {
+            if (state.currentAnswers.length >= state.totalQuestions) break;
+            state.currentAnswers.push(ch);
+          }
+          saveToStorage();
+          renderGridAndStats();
+        }
+      });
+
+      // Đồng bộ lại nếu bàn phím ảo trên di động nhập qua sự kiện input
+      el.fastInput.addEventListener('input', () => {
+        const raw = el.fastInput.value || '';
+        const curStr = state.currentAnswers.join('');
+        if (raw === curStr) return;
+
+        if (raw.length < curStr.length) {
+          state.currentAnswers = state.currentAnswers.slice(0, raw.length);
+        } else {
+          const added = raw.slice(curStr.length);
+          for (const ch of added) {
+            const ans = mapCharToAnswer(ch);
+            if (ans && state.currentAnswers.length < state.totalQuestions) {
+              state.currentAnswers.push(ans);
+            }
+          }
+        }
+        saveToStorage();
+        renderGridAndStats();
+      });
+
+      // Nút lưu bài, hủy nháp, hủy sửa
+      el.btnSaveExam.addEventListener('click', saveCurrentExam);
+      el.btnClearDraft.addEventListener('click', () => clearDraft(false));
+      el.btnCancelEdit.addEventListener('click', cancelEditMode);
+
+      // Khu vực Đáp án chuẩn
+      el.btnToggleKey.addEventListener('click', () => toggleKeyDrawer());
+      el.btnCloseKey.addEventListener('click', () => toggleKeyDrawer(false));
+      el.btnClearKey.addEventListener('click', () => {
+        openConfirm(
+          'Xóa đáp án chuẩn',
+          'Bạn có chắc muốn xóa toàn bộ đáp án chuẩn hiện tại không?',
+          () => {
+            state.rawKeyText = '';
+            state.answerKey = [];
+            el.keyTextarea.value = '';
+            saveToStorage();
+            renderKeyUI();
+            renderGridAndStats();
+            renderTable();
+            showToast('Đã xóa đáp án chuẩn.');
+          }
+        );
+      });
+
+      el.keyTextarea.addEventListener('input', () => {
+        state.rawKeyText = el.keyTextarea.value;
+        state.answerKey = parseAnswerKey(state.rawKeyText);
+        saveToStorage();
+        renderKeyUI();
+        renderGridAndStats();
+        renderTable();
+      });
+
+      // Thay đổi số câu & thang điểm
+      el.totalQuestionsInput.addEventListener('input', () => {
+        const val = parseInt(el.totalQuestionsInput.value, 10);
+        if (!Number.isNaN(val) && val >= 5 && val <= 120) {
+          state.totalQuestions = val;
+          state.answerKey = parseAnswerKey(state.rawKeyText);
+          state.currentAnswers = state.currentAnswers.slice(0, val);
+          saveToStorage();
+          renderKeyUI();
+          renderGridAndStats();
+          renderTable();
+        }
+      });
+
+      el.scaleInput.addEventListener('input', () => {
+        const val = parseFloat(el.scaleInput.value);
+        if (!Number.isNaN(val) && val > 0) {
+          state.scale = val;
+          saveToStorage();
+          renderKeyUI();
+          renderGridAndStats();
+          renderTable();
+        }
+      });
+
+      // Mở & ẩn/hiện PDF đối chiếu
+      function triggerPdfSelect() {
+        el.pdfFileInput.click();
+      }
+
+      el.btnOpenPdf.addEventListener('click', triggerPdfSelect);
+      el.btnChangePdf.addEventListener('click', triggerPdfSelect);
+      el.btnReopenPdf.addEventListener('click', triggerPdfSelect);
+      el.btnReminderOpenPdf.addEventListener('click', triggerPdfSelect);
+      el.btnDismissReminder.addEventListener('click', () => {
+        el.pdfReminder.classList.remove('visible');
+      });
+
+      function setPdfVisible(visible) {
+        el.pdfPane.classList.toggle('visible', visible);
+        el.resizer.classList.toggle('visible', visible);
+        el.btnTogglePdf.textContent = visible ? 'Ẩn PDF' : 'Hiện PDF';
+        el.btnTogglePdf.classList.toggle('active', visible);
+      }
+
+      el.pdfFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (state.pdfUrl) {
+          URL.revokeObjectURL(state.pdfUrl);
+        }
+        state.pdfUrl = URL.createObjectURL(file);
+        state.lastPdfName = file.name;
+        el.pdfFrame.src = state.pdfUrl;
+        el.pdfFrame.style.display = 'block';
+        el.pdfPlaceholder.style.display = 'none';
+        el.pdfFilename.textContent = file.name;
+        el.pdfReminder.classList.remove('visible');
+        el.btnTogglePdf.style.display = 'inline-flex';
+        setPdfVisible(true);
+        el.pdfFileInput.value = '';
+        saveToStorage();
+        el.fastInput.focus();
+      });
+
+      el.btnTogglePdf.addEventListener('click', () => {
+        setPdfVisible(!el.pdfPane.classList.contains('visible'));
+      });
+      el.btnHidePdfBar.addEventListener('click', () => setPdfVisible(false));
+
+      // Kéo thanh chia để thay đổi độ rộng khung PDF
+      (function initResizer() {
+        let isDragging = false;
+
+        el.resizer.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          isDragging = true;
+          el.resizer.classList.add('dragging');
+          el.pdfFrame.style.pointerEvents = 'none';
+          document.body.style.userSelect = 'none';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          const rect = el.workspace.getBoundingClientRect();
+          if (rect.width <= 0) return;
+          let pct = ((e.clientX - rect.left) / rect.width) * 100;
+          pct = Math.max(20, Math.min(75, pct));
+          state.pdfWidthPct = Math.round(pct * 10) / 10;
+          el.pdfPane.style.width = `${state.pdfWidthPct}%`;
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (!isDragging) return;
+          isDragging = false;
+          el.resizer.classList.remove('dragging');
+          el.pdfFrame.style.pointerEvents = '';
+          document.body.style.userSelect = '';
+          saveToStorage();
+        });
+      })();
+
+      // Click trực tiếp lên lưới câu hỏi để sửa từng câu
+      el.grid50.addEventListener('click', (e) => {
+        const cell = e.target.closest('.q-cell');
+        if (!cell) return;
+        const idx = parseInt(cell.dataset.index, 10);
+        if (!Number.isNaN(idx)) {
+          openQuickEdit(idx);
+        }
+      });
+
+      el.quickEditBar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.qe-btn');
+        if (!btn) return;
+        applyQuickEdit(btn.dataset.val);
+      });
+
+      el.btnCloseQuickEdit.addEventListener('click', () => {
+        closeQuickEdit();
+        renderGridAndStats();
+        el.fastInput.focus();
+      });
+
+      // Sửa / Xóa từng dòng trong bảng danh sách bài đã chấm
+      el.resultsBody.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.btn-edit-row');
+        if (editBtn) {
+          const id = Number(editBtn.dataset.id);
+          loadRecordForEdit(id);
+          return;
+        }
+        const delBtn = e.target.closest('.btn-del-row');
+        if (delBtn) {
+          const id = Number(delBtn.dataset.id);
+          const rec = state.records.find((r) => r.id === id);
+          if (!rec) return;
+          openConfirm(
+            'Xóa bài thi',
+            `Bạn có chắc muốn xóa bài Trang/STT "${rec.page}"${rec.name ? ' (' + rec.name + ')' : ''} không?`,
+            () => {
+              state.records = state.records.filter((r) => r.id !== id);
+              if (state.editingId === id) {
+                state.editingId = null;
+                state.currentAnswers = [];
+                state.draftPage = getNextPageNumber();
+                state.draftMssv = '';
+                state.draftName = '';
+              }
+              syncInputsFromState();
+              saveToStorage();
+              renderGridAndStats();
+              renderTable();
+              showToast(`Đã xóa bài ${rec.page}.`);
+            }
+          );
+        }
+      });
+
+      // Nút Xuất Excel, Sao lưu/Khôi phục JSON & Xóa dữ liệu phiên mới
+      el.btnExportExcel.addEventListener('click', exportResults);
+      el.btnBackupJson.addEventListener('click', backupJson);
+      el.btnRestoreJson.addEventListener('click', () => el.jsonFileInput.click());
+      el.jsonFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) restoreJsonFile(file);
+        el.jsonFileInput.value = '';
+      });
+
+      el.btnClearAll.addEventListener('click', () => {
+        openConfirm(
+          'Xóa dữ liệu phiên mới',
+          `Thao tác này sẽ xóa toàn bộ ${state.records.length} bài đã chấm và bài đang chấm dở (Đáp án chuẩn và cấu hình vẫn được giữ nguyên). Bạn có chắc chắn không?`,
+          () => {
+            state.records = [];
+            state.editingId = null;
+            state.currentAnswers = [];
+            state.draftPage = '1';
+            state.draftMssv = '';
+            state.draftName = '';
+            closeQuickEdit();
+            syncInputsFromState();
+            saveToStorage();
+            renderGridAndStats();
+            renderTable();
+            showToast('Đã xóa sạch danh sách để bắt đầu phiên mới.');
+            el.fastInput.focus();
+          }
+        );
+      });
+
+      // Đồng bộ tự động nếu người dùng mở ứng dụng ở nhiều tab trình duyệt cùng lúc
+      window.addEventListener('storage', (e) => {
+        if (e.key !== STORAGE_KEY_V2 || !e.newValue) return;
+        try {
+          const parsed = JSON.parse(e.newValue);
+          applyPersistedData(parsed);
+          syncInputsFromState();
+          renderKeyUI();
+          renderGridAndStats();
+          renderTable();
+          updateAutosaveIndicator(true, `Đã đồng bộ tab khác • ${formatTimeHHMMSS(new Date())}`);
+        } catch (err) {
+          // Bỏ qua nếu dữ liệu đang được ghi dở
+        }
+      });
+
+      // Sự kiện hộp thoại xác nhận
+      el.btnModalCancel.addEventListener('click', closeConfirm);
+      el.btnModalConfirm.addEventListener('click', () => {
+        const action = pendingConfirmAction;
+        closeConfirm();
+        if (typeof action === 'function') action();
+      });
+      el.confirmModal.addEventListener('click', (e) => {
+        if (e.target === el.confirmModal) closeConfirm();
+      });
+
+      /* ======================== KHỞI TẠO ======================== */
+      loadFromStorage();
+      renderKeyUI();
+      renderGridAndStats();
+      renderTable();
+
+      // Mở sẵn khung nhập đáp án nếu chưa có đủ đáp án chuẩn
+      if (state.answerKey.length < state.totalQuestions) {
+        toggleKeyDrawer(true);
+      } else {
+        el.fastInput.focus();
+      }
+    })();
+  </script>
+</body>
+</html>
